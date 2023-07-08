@@ -44,6 +44,15 @@ public class WebCrawler {
         queue.add(ir);
     }
 
+    public void cancelAll(){
+        queue.cancelAll(new RequestQueue.RequestFilter() {
+            @Override
+            public boolean apply(Request<?> request) {
+                return true;
+            }
+        });
+    }
+
     public String searchIMG(String result, int number, String url,String booru){
 
         switch (booru){
