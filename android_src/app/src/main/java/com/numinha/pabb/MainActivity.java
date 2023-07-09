@@ -34,29 +34,32 @@ public class MainActivity extends AppCompatActivity {
 
         main();
     }
+
     private void main(){
         wCraw = new WebCrawler(this,this);
         tests = new Tests(this);
 
         //Test internet
-        String result_conn = wCraw.checkNet() ? "Connected" : "Without Internet";
-        tests.alertPopup(result_conn,true);
+        if(wCraw.checkNet()){
+            scrollRule34(rule34_base + "%2a");
 
-        scrollRule34(rule34_base + "%2a");
-
-        EditText url_edt = findViewById(R.id.url_edtTxv);
-        url_edt.setOnKeyListener((view, i, keyEvent) -> {
-            LinearLayout linearLayout = findViewById(R.id.layout_scroll);
-            linearLayout.removeAllViews();
-            wCraw.cancelAll();
-            scrollRule34(rule34_base + url_edt.getText().toString() + "%2a");
-            searchTags(url_edt.getText().toString() + "*");
-            return false;
-        });
+            EditText url_edt = findViewById(R.id.url_edtTxv);
+            url_edt.setOnKeyListener((view, i, keyEvent) -> {
+                LinearLayout linearLayout = findViewById(R.id.layout_scroll);
+                linearLayout.removeAllViews();
+                wCraw.cancelAll();
+                scrollRule34(rule34_base + url_edt.getText().toString() + "%2a");
+                searchTags(url_edt.getText().toString() + "*");
+                return false;
+            });
+        }else {
+            tests.alertPopup("Without connection",false);
+        }
     }
+
     private void scrollRule34(String url){
         LinearLayout linearLayout = findViewById(R.id.layout_scroll);
-        Response.ErrorListener error = error1 -> tests.alertPopup(error1.toString(),false);
+        Response.ErrorListener error = error1 -> {};
 
         Response.Listener<String> response = response1 -> {
             int cont = 1;
@@ -67,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
                 Response.Listener<Bitmap> response2 = response3 -> {
                     ImageView image = new ImageView(wCraw.context);
                     image.setImageBitmap(response3);
-                    image.setMinimumHeight(480);
+                    image.setMinimumHeight(640);
                     image.setMinimumWidth( Resources.getSystem().getDisplayMetrics().widthPixels);
                     image.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     image.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
@@ -75,8 +78,8 @@ public class MainActivity extends AppCompatActivity {
                     linearLayout.addView(image);
                 };
 
-                wCraw.getImage(url_image, response2, error, Resources.getSystem().getDisplayMetrics().widthPixels,480);
-
+                wCraw.getImage(url_image, response2, error, Resources.getSystem().getDisplayMetrics().widthPixels-50,
+                        Resources.getSystem().getDisplayMetrics().heightPixels-50);
                 cont++;
                 url_image = wCraw.searchIMG(response1,cont,url,"rule34");
             }
@@ -89,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout linearLayout = findViewById(R.id.layout_scroll);
         LinearLayout search_layout = findViewById(R.id.search_layout);
 
-        Response.ErrorListener error = error1 -> tests.alertPopup(error1.toString(),false);
+        Response.ErrorListener error = error1 -> {};
 
         Response.Listener<String> response = response1 -> {
             int number = 5;
