@@ -81,12 +81,13 @@ public class MainActivity extends AppCompatActivity {
                     image.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
                     image.setOnClickListener(view -> {
-                        tests.alertPopup("saved",true);
-                        String root = Environment.getExternalStorageDirectory().getAbsolutePath();
+
+                        String root = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
                         File myDir = new File(root + "/saved_images");
                         myDir.mkdirs();
 
                         String fname = "Image.jpg";
+                        tests.alertPopup("saved: " + root + "/saved_images/" + fname,true);
                         File file = new File (myDir, fname);
                         if (file.exists ()) file.delete ();
                         try {
