@@ -2,13 +2,17 @@ package com.numinha.pabb;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Dialog;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.media.Image;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -18,6 +22,8 @@ import android.widget.RelativeLayout;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -73,6 +79,28 @@ public class MainActivity extends AppCompatActivity {
                     image.setMinimumHeight(640);
                     image.setMinimumWidth( Resources.getSystem().getDisplayMetrics().widthPixels);
                     image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+                    image.setOnClickListener(view -> {
+                        tests.alertPopup("saved",true);
+                        String root = Environment.getExternalStorageDirectory().getAbsolutePath();
+                        File myDir = new File(root + "/saved_images");
+                        myDir.mkdirs();
+
+                        String fname = "Image.jpg";
+                        File file = new File (myDir, fname);
+                        if (file.exists ()) file.delete ();
+                        try {
+                            FileOutputStream out = new FileOutputStream(file);
+                            response3.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                            out.flush();
+                            out.close();
+
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+
                     image.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT));
                     linearLayout.addView(image);
@@ -110,16 +138,18 @@ public class MainActivity extends AppCompatActivity {
 
                     Button btn_temp = new Button(wCraw.context);
                     btn_temp.setText(result2);
+                    btn_temp.setBackgroundColor(wCraw.context.getColor(R.color.purple_700));
+                    btn_temp.setTextColor(wCraw.context.getColor(R.color.white));
                     String finalResult = result;
                     String finalResult2 = result2;
-                    btn_temp.setOnTouchListener((View view, MotionEvent motionEvent) -> {
+
+                    btn_temp.setOnClickListener((View view) -> {
                             linearLayout.removeAllViews();
                             wCraw.cancelAll();
 
                             url_edt.setText(finalResult2);
                             scrollRule34(rule34_base + finalResult + "%2a");
                             search_layout.removeAllViews();
-                            return false;
                         }
                     );
                     btn_temp.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
