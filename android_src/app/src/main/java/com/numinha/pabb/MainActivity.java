@@ -25,7 +25,9 @@ import com.android.volley.VolleyError;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URL;import java.util.Calendar;
+import java.util.Date;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -71,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
             int cont = 1;
             String url_image = wCraw.searchIMG(response1,cont,url,"rule34");
 
+
             while (url_image != null)
             {
                 Response.Listener<Bitmap> response2 = response3 -> {
@@ -85,9 +88,9 @@ public class MainActivity extends AppCompatActivity {
                         String root = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
                         File myDir = new File(root + "/saved_images");
                         myDir.mkdirs();
-
-                        String fname = "Image.jpg";
-                        tests.alertPopup("saved: " + root + "/saved_images/" + fname,true);
+                        Date currentTime = Calendar.getInstance().getTime();
+                        String fname = "Image" + currentTime + ".jpg";
+                        tests.alertPopup("saved",true);
                         File file = new File (myDir, fname);
                         if (file.exists ()) file.delete ();
                         try {
