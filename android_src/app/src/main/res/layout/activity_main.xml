@@ -18,9 +18,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:textColor="@color/purple_200"
+            android:hint="Search here"
             android:inputType="textPersonName"
-            android:text="Search here" />
+            android:textColor="@color/purple_200" />
 
         <LinearLayout
             android:id="@+id/search_layout"
@@ -32,7 +32,15 @@
             android:id="@+id/layout_scroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"></LinearLayout>
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh" />
 
     </LinearLayout>
 

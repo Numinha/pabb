@@ -2,30 +2,21 @@ package com.numinha.pabb;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.Dialog;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Environment;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;import java.util.Calendar;
+import java.util.Calendar;
 import java.util.Date;
 
 
@@ -33,6 +24,9 @@ public class MainActivity extends AppCompatActivity {
 
     WebCrawler wCraw;
     Tests tests;
+    int cont_post1 = 0;
+    int sum_cont = 50;
+    int cont_refresh = 100;
     String rule34_base = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&tags=";
 
     @Override
@@ -48,38 +42,56 @@ public class MainActivity extends AppCompatActivity {
         tests = new Tests(this);
 
         //Test internet
-        if(wCraw.checkNet()){
-            scrollRule34(rule34_base + "%2a");
+        if(!wCraw.checkNet()){
+            tests.alertPopup("Without connection",false);
+            return;
+        }
 
-            EditText url_edt = findViewById(R.id.url_edtTxv);
-            url_edt.setOnKeyListener((view, i, keyEvent) -> {
+        //Main to rule34 page
+        EditText url_edt = findViewById(R.id.url_edtTxv);
+        url_edt.setOnKeyListener((view, i, keyEvent) -> {
+            cont_post1 = 1;
+            LinearLayout linearLayout = findViewById(R.id.layout_scroll);
+            linearLayout.removeAllViews();
+            wCraw.cancelAll();
+            scrollRule34(rule34_base + url_edt.getText().toString() + "%2a",cont_post1);
+
+            searchTags(url_edt.getText().toString() + "*");
+            return false;
+        });
+        scrollRule34(rule34_base + url_edt.getText().toString() + "%2a",cont_post1);
+
+        //Button refresh
+        cont_post1 = cont_post1 + sum_cont;
+        Button btn_refresh = findViewById(R.id.btn_refresh);
+        btn_refresh.setOnClickListener(view -> {
+            if (cont_post1 >= cont_refresh){
                 LinearLayout linearLayout = findViewById(R.id.layout_scroll);
                 linearLayout.removeAllViews();
-                wCraw.cancelAll();
-                scrollRule34(rule34_base + url_edt.getText().toString() + "%2a");
-                searchTags(url_edt.getText().toString() + "*");
-                return false;
-            });
-        }else {
-            tests.alertPopup("Without connection",false);
-        }
+            }
+            cont_post1 = cont_post1 + sum_cont;
+            wCraw.cancelAll();
+            scrollRule34(rule34_base + url_edt.getText().toString() + "%2a",cont_post1);
+        });
     }
 
-    private void scrollRule34(String url){
+    private void scrollRule34(String url,int cont_posts){
         LinearLayout linearLayout = findViewById(R.id.layout_scroll);
         Response.ErrorListener error = error1 -> {};
 
         Response.Listener<String> response = response1 -> {
-            int cont = 1;
+            int cont = cont_posts;
+            int final_cont = cont + sum_cont;
             String url_image = wCraw.searchIMG(response1,cont,url,"rule34");
 
 
-            while (url_image != null)
+            while (url_image != null && cont <= final_cont)
             {
                 Response.Listener<Bitmap> response2 = response3 -> {
                     ImageView image = new ImageView(wCraw.context);
                     image.setImageBitmap(response3);
                     image.setMinimumHeight(640);
+                    image.setPadding(10,10,10,10);
                     image.setMinimumWidth( Resources.getSystem().getDisplayMetrics().widthPixels);
                     image.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
@@ -87,21 +99,22 @@ public class MainActivity extends AppCompatActivity {
 
                         String root = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
                         File myDir = new File(root + "/saved_images");
-                        myDir.mkdirs();
                         Date currentTime = Calendar.getInstance().getTime();
-                        String fname = "Image" + currentTime + ".jpg";
-                        tests.alertPopup("saved",true);
+                        String time = currentTime.toString();
+                        time = time.substring(0,19).replaceAll("[: ]","-");
+                        String fname = "Image_" + time + "_.jpg";
+
                         File file = new File (myDir, fname);
-                        if (file.exists ()) file.delete ();
                         try {
                             FileOutputStream out = new FileOutputStream(file);
                             response3.compress(Bitmap.CompressFormat.JPEG, 90, out);
                             out.flush();
                             out.close();
-
+                            tests.alertPopup("saved" + root + "/saved_images" + fname,true);
 
                         } catch (Exception e) {
                             e.printStackTrace();
+                            tests.alertDialog(e.getMessage(), e.toString());
                         }
                     });
 
@@ -152,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                             wCraw.cancelAll();
 
                             url_edt.setText(finalResult2);
-                            scrollRule34(rule34_base + finalResult + "%2a");
+                            scrollRule34(rule34_base + finalResult + "%2a",1);
                             search_layout.removeAllViews();
                         }
                     );
