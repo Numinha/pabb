@@ -35,29 +35,34 @@ public class WebCrawler {
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url_string, response, error);
         queue.add(stringRequest);
     }
+    public void getTags(String url_string,Response.Listener<String> response, Response.ErrorListener error){
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url_string, response, error);
+        stringRequest.setTag("tags");
+        queue.add(stringRequest);
+    }
+    public void cancelTags(String tag){
+        queue.cancelAll(tag);
+    }
 
-    public void getImage(String url_string,Response.Listener<Bitmap> response, Response.ErrorListener error, int width, int height){
+    public boolean getImage(String text,Response.Listener<Bitmap> response, Response.ErrorListener error, int width, int height,int id){
+        for (int i = 1; i <= id; i++){
+            if (text.indexOf("<post ") > 0){
+                text = text.substring(text.indexOf("<post") + 5);
+            }else {
+                return false;
+            }
+        }
+        text = text.substring(text.indexOf("file_url=\"") + 10);
+        text = text.substring(0,text.indexOf('"'));
+
         ImageRequest ir = new ImageRequest(
-                url_string, response, width,
+                text, response, width,
                 height, ImageView.ScaleType. CENTER_INSIDE, Bitmap.Config.RGB_565, error);
         queue.add(ir);
+        return true;
     }
 
     public void cancelAll(){
         queue.cancelAll(request -> true);
-    }
-
-    public String searchIMG(String result, int number, String url,String booru){
-        for (int i = 1; i <= number; i++){
-            if (result.indexOf("<post ") > 0){
-                result = result.substring(result.indexOf("<post") + 5);
-            }else {
-                return null;
-            }
-        }
-        result = result.substring(result.indexOf("file_url=\"") + 10);
-        result = result.substring(0,result.indexOf('"'));
-
-        return result;
     }
 }

@@ -5,6 +5,11 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.widget.Toast;
 
+import com.android.volley.NetworkError;
+import com.android.volley.VolleyError;
+
+import java.io.UnsupportedEncodingException;
+
 public class Tests {
     Activity activity;
 
@@ -23,5 +28,16 @@ public class Tests {
         alert = builder.create();
         alert.show();
 
+    }
+    public void errorAlert(VolleyError error){
+        String body = "";
+        final String statusCode = String.valueOf(error.networkResponse.statusCode);
+        try {
+            body = new String(error.networkResponse.data,"UTF-8");
+            alertDialog(body,"Error");
+
+        } catch (UnsupportedEncodingException e) {
+            alertPopup("Strange error",false);
+        }
     }
 }

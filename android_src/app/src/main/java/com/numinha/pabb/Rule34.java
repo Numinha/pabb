@@ -4,10 +4,15 @@ import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.os.Environment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.android.volley.Response;
 
@@ -23,6 +28,9 @@ public class Rule34 {
     Activity activity;
     int width;
     int height;
+    int posts_number;
+    int post_id = 1;
+    Posts[] posts_cache;
     Response.ErrorListener error;
 
     String rule34_base = "https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&limit=2&pid=0&tags=";
@@ -33,85 +41,95 @@ public class Rule34 {
         this.activity = t_activity;
         this.width = Resources.getSystem().getDisplayMetrics().widthPixels-50;
         this.height = Resources.getSystem().getDisplayMetrics().heightPixels-50;
-        error = e -> tests.alertDialog(e.getMessage(), e.toString());
+        this.posts_number = 5;
+        error = e -> tests.errorAlert(e);
+        posts_cache = new Posts[this.posts_number];
 
     }
     public void setAutoCompleteText(){
-        AutoCompleteTextView actv_search = (AutoCompleteTextView) activity.findViewById(R.id.actv_search);
+        AutoCompleteTextView actv_search = activity.findViewById(R.id.actv_search);
+        String[] result_return = {"All","female","breasts","penis","male","nipples"};
+        //Add Search Tags
+        actv_search.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
-        //Add Search Tags by Enter
-        actv_search.setOnKeyListener((view, i, keyEvent) -> {
-            if(keyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_UP){
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 Response.Listener<String> response = response1 -> {
 
-                    String[] result_return = {"All","","","","",""};
-                    for (int cont = 1; cont <= 5; cont++){
-                        if (response1.indexOf("<tr><td>") > 0){
-                            String result;
-                            String result2;
-                            response1 = response1.substring(response1.indexOf("<tr><td>") + 8);
-                            result = response1;
-                            result = result.substring(result.indexOf("tags=") + 5);
-                            result2 = result.substring(result.indexOf('"')+2,result.indexOf("</a>"));
-                            result = result.substring(0,result.indexOf('"'));
-
-                            result_return[cont] = result2;
+                    if(!response1.contains("refine")){
+                        for (int cont = 1; cont <= 5; cont++){
+                            if (response1.indexOf("<tr><td>") > 0){
+                                String result;
+                                response1 = response1.substring(response1.indexOf("<tr><td>") + 8);
+                                result = response1;
+                                result = result.substring(result.indexOf("tags=") + 5);
+                                result = result.substring(result.indexOf('"')+2,result.indexOf("</a>"));
+                                result_return[cont] = result;
+                            }
                         }
                     }
                     ArrayAdapter<String> searchs2 = new ArrayAdapter<>(activity, android.R.layout.simple_dropdown_item_1line, result_return);
                     actv_search.setAdapter(searchs2);
-                    actv_search.showDropDown();
-
+                    post_id = 1;
                 };
-                wCraw.getHTML("https://rule34.xxx/index.php?page=tags&s=list&tags=" + actv_search.getText().toString() + "*&sort=desc&order_by=index_count", response, error);
-
+                wCraw.cancelTags("tags");
+                wCraw.getTags("https://rule34.xxx/index.php?page=tags&s=list&tags=" + actv_search.getText().toString() + "*&sort=desc&order_by=index_count", response, error);
             }
-            return false;
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                actv_search.showDropDown();
+            }
         });
 
-        search(rule34_base + "*");
+        search(rule34_base + "*",post_id);
 
-        actv_search.setOnItemClickListener((adapterView, view, i, l) -> search(rule34_base + actv_search.getText() + "*"));
+        actv_search.setOnItemClickListener((adapterView, view, i, l) -> search(rule34_base + actv_search.getText() + "*",post_id));
     }
 
-    private void search(String url){
-        //load actual image
-        Response.Listener<String> response = response1 -> {
-            Response.Listener<Bitmap> response2 = response3 -> {
-                ImageView image = activity.findViewById(R.id.imgv_base);
-                image.setImageBitmap(response3);
-                image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                //Save image
-                image.setOnClickListener(view -> {
-                    String root = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
-                    File myDir = new File(root + "/saved_images");
-                    Date currentTime = Calendar.getInstance().getTime();
-                    String time = currentTime.toString();
-                    time = time.substring(0,19).replaceAll("[: ]","-");
-                    String fname = "Image_" + time + "_.jpg";
-
-                    File file = new File (myDir, fname);
-                    try {
-                        FileOutputStream out = new FileOutputStream(file);
-                        response3.compress(Bitmap.CompressFormat.JPEG, 90, out);
-                        out.flush();
-                        out.close();
-                        tests.alertPopup("saved",true);
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        tests.alertDialog(e.getMessage(), e.toString());
-                    }
-                });
-            };
-
-            String url_image = wCraw.searchIMG(response1,1,rule34_base,"rule34");
-            wCraw.getImage(url_image, response2, error, width, height);
+    private void search(String url, int id){
+        //load search page
+        Response.Listener<String> gethtml = html -> {
+            boolean test = true;
+            int cont = 0;
+            while(test){
+                Response.Listener<Bitmap> getimage = image -> {
+                    Posts temp_post = new Posts(activity);
+                    temp_post.setImage(image);
+                    posts_cache[cont] = temp_post;
+                };
+                test =  wCraw.getImage(html, getimage, error, width, height, post_id);
+            }
+            refreshImage(0);
         };
-        wCraw.getHTML(url, response, error);
+        wCraw.getHTML(url, gethtml, error);
+
+    }
+    public void refreshImage(int id_p){
+        LinearLayout search_layout = activity.findViewById(R.id.search_layout);
+        search_layout.removeAllViews();
+        if(posts_cache[id_p] != null){
+            ImageView imagev =  posts_cache[id_p].getImage();
+            imagev.setOnTouchListener((view, motionEvent) -> {
+                if(motionEvent.getAction() == MotionEvent.ACTION_UP){
+                    refreshImage(id_p+1);
+                }
+                return false;
+            });
+            search_layout.addView(imagev);
+        }
     }
     public void setImageQuality(int t_Width,int t_Height){
         this.width = t_Height;
         this.height = t_Width;
     }
+    public void setPostsNumber(int quant){
+        this.posts_number = quant;
+        posts_cache = new Posts[this.posts_number];
+    }
+
 }

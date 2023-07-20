@@ -41,20 +41,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
     public void ChangeMainPage(){
-        //Set configuration screen
         setContentView(R.layout.activity_main);
 
         ImageView imgv_search = (ImageView) findViewById(R.id.imgv_config);
         imgv_search.setOnClickListener(view -> {
-            wCraw.cancelAll();
-            setContentView(R.layout.configs);
-            configs.main();
+            ChangeConfigPage();
         });
 
         if(Objects.equals(booru, "rule34")){
             r34.setImageQuality(400,300);
+            r34.setPostsNumber(5);
             r34.setAutoCompleteText();
         }
+    }
+    public void ChangeConfigPage(){
+        wCraw.cancelAll();
+        setContentView(R.layout.configs);
+        configs.main();
     }
 
 }
